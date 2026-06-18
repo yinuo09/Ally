@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ally · 你的AI内容策略师</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ AMBIENT BACKGROUND ============ -->
+<div class="ambient" aria-hidden="true">
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-grain"></div>
+</div>
+
+<!-- ============ SIDEBAR (desktop) ============ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-mark">A</div>
+    <div class="brand-text">
+      <div class="brand-name">Ally</div>
+      <div class="brand-sub">你的 AI 内容策略师</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" data-page="home" onclick="switchPage('home')">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4l8 7.5M6 10v9.5a1 1 0 001 1h3.5v-6h3v6H17a1 1 0 001-1V10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span>今日选题</span>
+    </button>
+    <button class="nav-item" data-page="profile" onclick="switchPage('profile')">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <span>声音档案</span>
+    </button>
+    <button class="nav-item" data-page="generate" onclick="switchPage('generate')">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.8L19 9.5l-4.8 1.7L12 16l-1.8-4.8L5 9.5l4.8-1.7L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      </span>
+      <span>生成内容</span>
+    </button>
+    <button class="nav-item" data-page="result" onclick="switchPage('result')">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <span>查看成果</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-foot">
+    <div class="profile-pill" id="sidebarProfilePill">
+      <div class="pp-dot"></div>
+      <div class="pp-text">
+        <div class="pp-label">声音档案</div>
+        <div class="pp-status" id="sidebarProfileStatus">尚未建立</div>
+      </div>
+    </div>
+    <button class="settings-link" onclick="openApiSettings()">API 设置</button>
+  </div>
+</aside>
+
+<!-- ============ API SETTINGS MODAL ============ -->
+<div class="modal-overlay" id="apiModalOverlay" onclick="if(event.target===this)closeApiSettings()">
+  <div class="modal-card">
+    <div class="modal-title">手动配置 API（可选）</div>
+    <p class="modal-desc">如果站点已经在 Vercel 配置了后端代理，不需要填这里。仅当代理不可用、或本地开发时才需要手动填写。</p>
+    <div class="form-block">
+      <label class="form-label">API 地址</label>
+      <input type="text" id="manualApiUrl" class="form-input" placeholder="https://api.deepseek.com/chat/completions">
+    </div>
+    <div class="form-block">
+      <label class="form-label">API Key</label>
+      <input type="password" id="manualApiKey" class="form-input" placeholder="sk-...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeApiSettings()">取消</button>
+      <button class="btn btn-primary" onclick="saveApiSettingsFromModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN ============ -->
+<main class="main">
+
+  <!-- ===================== PAGE 1 : HOME / 今日选题 ===================== -->
+  <section class="page show" id="page-home">
+
+    <!-- Empty state: no profile yet -->
+    <div class="empty-hero" id="homeEmpty">
+      <div class="empty-mark">A</div>
+      <h1 class="empty-title">你好，我是 Ally</h1>
+      <p class="empty-desc">粘贴几篇你写过的东西，我会记住你的句法、节奏与态度——<br>从今天起，每天早上替你想好「写什么」。</p>
+      <button class="btn btn-primary btn-lg" onclick="showUpload()">
+        <span>建立我的声音档案</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <!-- Upload panel (revealed) -->
+      <div class="upload-panel" id="uploadPanel">
+        <div class="upload-tabs">
+          <button class="utab active" id="utab-paste" onclick="switchUploadTab(this,'upaste')">粘贴文字</button>
+          <button class="utab" id="utab-file" onclick="switchUploadTab(this,'ufile')">上传文件</button>
+        </div>
+
+        <div class="utab-panel show" id="upaste">
+          <textarea id="pasteArea" class="paste-area" placeholder="把你写过的几段文字粘贴在这里——朋友圈、公众号、笔记，越像你自己说话的内容越好。建议 300 字以上。"></textarea>
+          <div class="paste-meta"><span id="pasteCount">0</span> 字</div>
+        </div>
+
+        <div class="utab-panel" id="ufile">
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none"><path d="M12 4v11M12 4l-4 4M12 4l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16.5V18a2 2 0 002 2h10a2 2 0 002-2v-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="dz-text">拖拽文件到这里，或点击选择</div>
+            <div class="dz-sub">.md · .txt · .html · .docx（可多选）</div>
+          </label>
+          <input type="file" id="fileInput" multiple accept=".md,.txt,.html,.docx" hidden onchange="handleFileUpload(event)">
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="doCloneBtn" onclick="doClone()" disabled>
+          <span>开始分析我的声音</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filled state: profile exists -->
+    <div class="home-filled" id="homeFilled" style="display:none;">
+      <header class="page-head">
+        <div class="ph-eyebrow">DAILY BRIEFING</div>
+        <div class="ph-row">
+          <h1 class="page-title">今日选题推荐</h1>
+          <div class="ph-actions">
+            <span class="ph-date" id="todayDate"></span>
+            <button class="btn btn-ghost btn-sm" onclick="loadTopics(true)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 12a8 8 0 0114-5.3M20 12a8 8 0 01-14 5.3M16 4v4h-4M8 20v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              换一批
+            </button>
+          </div>
+        </div>
+        <p class="ph-sub">基于你的声音档案 + 全网热点，今天这三条最值得你写。</p>
+      </header>
+
+      <div class="topic-grid" id="topicGrid"><!-- injected --></div>
+
+      <div class="custom-topic-box">
+        <div class="ctb-label">или 我自己有想法</div>
+        <div class="ctb-row">
+          <input type="text" id="customTopicInput" class="ctb-input" placeholder="输入你想写的主题...">
+          <button class="btn btn-secondary" onclick="useCustomTopic()">直接生成</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PAGE 2 : PROFILE / 声音档案 ===================== -->
+  <section class="page" id="page-profile">
+
+    <div class="analyzing" id="analyzingView" style="display:none;">
+      <div class="spin-mark">
+        <svg viewBox="0 0 80 80" width="80" height="80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="2"/><circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="180" class="spin-ring"/></svg>
+      </div>
+      <div class="analyzing-step" id="analyzingStep">正在阅读你的文字…</div>
+      <div class="analyzing-bar"><div class="analyzing-fill" id="analyzingFill"></div></div>
+    </div>
+
+    <!-- Empty state: preview of what a profile will contain -->
+    <div class="profile-empty" id="profileEmptyView" style="display:none;">
+      <header class="page-head">
+        <div class="ph-eyebrow">VOICE IDENTITY</div>
+        <h1 class="page-title">声音档案</h1>
+        <p class="ph-sub">建立档案后，这里会呈现 Ally 对你写作声音的理解——下面是档案会包含的内容，目前还是空的。</p>
+      </header>
+
+      <div class="voice-card placeholder-card">
+        <div class="vc-badges">
+          <span class="vc-badge ph-badge">标签 A</span>
+          <span class="vc-badge ph-badge">标签 B</span>
+          <span class="vc-badge ph-badge">标签 C</span>
+        </div>
+        <p class="vc-summary ph-text">这里会出现一句话风格总结，比如「你习惯用短句推进逻辑，情绪克制但态度清晰」。</p>
+
+        <div class="vc-grid">
+          <div class="vc-traits">
+            <div class="trait-row ph-row"><span class="trait-label">句式节奏</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:40%"></div></div><span class="trait-val">--</span></div>
+            <div class="trait-row ph-row"><span class="trait-label">词汇丰富度</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:55%"></div></div><span class="trait-val">--</span></div>
+            <div class="trait-row ph-row"><span class="trait-label">情感浓度</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:30%"></div></div><span class="trait-val">--</span></div>
+            <div class="trait-row ph-row"><span class="trait-label">逻辑密度</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:60%"></div></div><span class="trait-val">--</span></div>
+            <div class="trait-row ph-row"><span class="trait-label">亲近度</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:45%"></div></div><span class="trait-val">--</span></div>
+            <div class="trait-row ph-row"><span class="trait-label">流畅度</span><div class="trait-bar-bg"><div class="trait-bar-fill ph-fill" style="width:50%"></div></div><span class="trait-val">--</span></div>
+          </div>
+          <div class="vc-side">
+            <div class="vc-stats ph-block">
+              <div class="vstat-row"><span class="vstat-num ph-text">--</span><span class="vstat-lbl">句数(估算)</span></div>
+              <div class="vstat-row"><span class="vstat-num ph-text">--</span><span class="vstat-lbl">均句字数</span></div>
+              <div class="vstat-row"><span class="vstat-num ph-text">--</span><span class="vstat-lbl">去重词汇</span></div>
+            </div>
+            <div class="vc-rate ph-block">
+              <div class="vcr-row"><span class="vcr-label">已生成</span><span class="vcr-val ph-text">--</span></div>
+              <div class="vcr-row"><span class="vcr-label">好评率</span><span class="vcr-val ph-text">--</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="placeholder-overlay-label">尚未建立 · 建档后自动填充</div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block" onclick="showFirstBuildPanel()">
+        <span>建立我的声音档案</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <!-- First-time build panel (own instance, separate from home + update) -->
+      <div class="upload-panel" id="firstBuildPanel">
+        <div class="update-panel-divider">
+          <span>粘贴或上传你写过的文字</span>
+        </div>
+        <div class="upload-tabs">
+          <button class="utab active" id="utab-paste-3" onclick="switchUploadTab(this,'upaste3')">粘贴文字</button>
+          <button class="utab" id="utab-file-3" onclick="switchUploadTab(this,'ufile3')">上传文件</button>
+        </div>
+
+        <div class="utab-panel show" id="upaste3">
+          <textarea id="pasteArea3" class="paste-area" placeholder="把你写过的几段文字粘贴在这里——朋友圈、公众号、笔记，越像你自己说话的内容越好。建议 300 字以上。"></textarea>
+          <div class="paste-meta"><span id="pasteCount3">0</span> 字</div>
+        </div>
+
+        <div class="utab-panel" id="ufile3">
+          <label class="dropzone" id="dropzone3" for="fileInput3">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none"><path d="M12 4v11M12 4l-4 4M12 4l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16.5V18a2 2 0 002 2h10a2 2 0 002-2v-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="dz-text">拖拽文件到这里，或点击选择</div>
+            <div class="dz-sub">.md · .txt · .html · .docx（可多选）</div>
+          </label>
+          <input type="file" id="fileInput3" multiple accept=".md,.txt,.html,.docx" hidden onchange="handleFileUpload(event)">
+          <div class="file-list" id="fileList3"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="doFirstBuildBtn" onclick="doClone()" disabled>
+          <span>开始分析我的声音</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="profile-view" id="profileView" style="display:none;">
+      <header class="page-head">
+        <div class="ph-eyebrow">VOICE IDENTITY</div>
+        <div class="ph-row">
+          <h1 class="page-title">声音档案</h1>
+          <button class="btn btn-ghost btn-sm" onclick="showUpdateProfile()">更新档案</button>
+        </div>
+      </header>
+
+      <div class="voice-card">
+        <div class="vc-badges" id="vcBadges"></div>
+        <p class="vc-summary" id="vcSummary"></p>
+
+        <div class="vc-grid">
+          <div class="vc-traits" id="vcTraits"></div>
+          <div class="vc-side">
+            <div class="vc-stats" id="vcStats"></div>
+            <div class="vc-rate">
+              <div class="vcr-row">
+                <span class="vcr-label">已生成</span>
+                <span class="vcr-val" id="vcGenCount">0</span>
+              </div>
+              <div class="vcr-row">
+                <span class="vcr-label">好评率</span>
+                <span class="vcr-val accent" id="vcLikeRate">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block" onclick="switchPage('generate')">
+        去生成内容
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <!-- Inline update-profile panel -->
+      <div class="upload-panel" id="updatePanel">
+        <div class="update-panel-divider">
+          <span>更新你的声音档案</span>
+        </div>
+        <div class="upload-tabs">
+          <button class="utab active" id="utab-paste-2" onclick="switchUploadTab(this,'upaste2')">粘贴文字</button>
+          <button class="utab" id="utab-file-2" onclick="switchUploadTab(this,'ufile2')">上传文件</button>
+        </div>
+
+        <div class="utab-panel show" id="upaste2">
+          <textarea id="pasteArea2" class="paste-area" placeholder="把你最近写的文字粘贴在这里，我会用它来更新对你声音的理解（建议 300 字以上）。"></textarea>
+          <div class="paste-meta"><span id="pasteCount2">0</span> 字</div>
+        </div>
+
+        <div class="utab-panel" id="ufile2">
+          <label class="dropzone" id="dropzone2" for="fileInput2">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none"><path d="M12 4v11M12 4l-4 4M12 4l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16.5V18a2 2 0 002 2h10a2 2 0 002-2v-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="dz-text">拖拽文件到这里，或点击选择</div>
+            <div class="dz-sub">.md · .txt · .html · .docx（可多选）</div>
+          </label>
+          <input type="file" id="fileInput2" multiple accept=".md,.txt,.html,.docx" hidden onchange="handleFileUpload(event)">
+          <div class="file-list" id="fileList2"></div>
+        </div>
+
+        <div class="update-panel-actions">
+          <button class="btn btn-ghost btn-sm" onclick="closeUpdatePanel()">取消</button>
+          <button class="btn btn-primary" id="doUpdateBtn" onclick="doClone()" disabled>重新分析我的声音</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PAGE 3 : GENERATE / 生成内容 ===================== -->
+  <section class="page" id="page-generate">
+    <header class="page-head">
+      <div class="ph-eyebrow">CREATE</div>
+      <h1 class="page-title">生成内容</h1>
+      <p class="ph-sub">告诉我写什么、给哪个平台看，我用你的声音把它写出来。</p>
+    </header>
+
+    <div class="gen-form">
+      <div class="form-block">
+        <label class="form-label">主题</label>
+        <input type="text" id="genTopicInput" class="form-input" placeholder="今天要写的主题…">
+      </div>
+
+      <div class="form-block">
+        <label class="form-label">发布到</label>
+        <div class="platform-row" id="platformRow">
+          <button class="platform-pill" data-platform="koubo" onclick="pickType(this)">
+            <span class="pp-icon">🎙️</span>口播
+          </button>
+          <button class="platform-pill" data-platform="wechat" onclick="pickType(this)">
+            <span class="pp-icon">📰</span>公众号
+          </button>
+          <button class="platform-pill" data-platform="xhs" onclick="pickType(this)">
+            <span class="pp-icon">📕</span>小红书
+          </button>
+          <button class="platform-pill" data-platform="toutiao" onclick="pickType(this)">
+            <span class="pp-icon">📊</span>头条
+          </button>
+          <button class="platform-pill" data-platform="outline" onclick="pickType(this)">
+            <span class="pp-icon">🗂️</span>大纲
+          </button>
+        </div>
+      </div>
+
+      <div class="form-block">
+        <label class="form-label">素材稿件 <span class="form-optional">可选</span></label>
+        <textarea id="genExtra" class="form-textarea" placeholder="有自己的草稿、亲身经历或观点？粘贴在这里，我会保持你的风格把它写进正文。"></textarea>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block" id="generateBtn" onclick="doGenerate()">
+        <span>开始生成</span>
+      </button>
+
+      <!-- generating overlay -->
+      <div class="gen-progress" id="genProgress" style="display:none;">
+        <div class="gp-step" id="gpStep1">理解选题与平台规则</div>
+        <div class="gp-step" id="gpStep2">套用你的声音档案</div>
+        <div class="gp-step" id="gpStep3">融入你的素材稿件</div>
+        <div class="gp-step" id="gpStep4">校对禁词与格式</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PAGE 4 : RESULT / 查看成果 ===================== -->
+  <section class="page" id="page-result">
+    <header class="page-head">
+      <div class="ph-eyebrow">RESULT</div>
+      <h1 class="page-title">查看成果</h1>
+    </header>
+
+    <div class="result-meta" id="resultMeta"></div>
+
+    <div class="result-body" id="resultBody"><!-- markdown rendered --></div>
+
+    <div class="feedback-box">
+      <div class="fb-row">
+        <span class="fb-label">像不像你的风格？</span>
+        <div class="fb-btns">
+          <button class="fb-btn" id="fbLike" onclick="doFeedback(true)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M7 11v9H4a1 1 0 01-1-1v-7a1 1 0 011-1h3zm0 0l4-7a2 2 0 013.5 1.5L13.5 9H19a2 2 0 012 2l-1.5 7a2 2 0 01-2 1.5H7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="fb-btn" id="fbDislike" onclick="doFeedback(false)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M17 13V4h3a1 1 0 011 1v7a1 1 0 01-1 1h-3zm0 0l-4 7a2 2 0 01-3.5-1.5L10.5 15H5a2 2 0 01-2-2l1.5-7A2 2 0 016.5 4.5H17" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fb-comment-box" id="fbCommentBox" style="display:none;">
+        <textarea id="fbComment" class="fb-comment" placeholder="哪里不太像？说说看，我会记下来。"></textarea>
+        <button class="btn btn-secondary btn-sm" onclick="submitFeedbackComment()">提交反馈</button>
+      </div>
+      <div class="fb-thanks" id="fbThanks" style="display:none;">已记下，会用来调整你的声音档案 ✓</div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-secondary" onclick="copyResult()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><rect x="9" y="9" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V6a1.5 1.5 0 011.5-1.5H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        复制
+      </button>
+      <button class="btn btn-secondary" onclick="downloadResult()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M12 4v11M12 15l-4-4M12 15l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 17v1.5A1.5 1.5 0 006.5 20h11a1.5 1.5 0 001.5-1.5V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        下载
+      </button>
+      <button class="btn btn-secondary" onclick="switchPage('generate')">换个主题</button>
+      <button class="btn btn-secondary" onclick="switchPage('home')">重新选题</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ MOBILE BOTTOM NAV ============ -->
+<nav class="mobile-nav">
+  <button class="mnav-item active" data-page="home" onclick="switchPage('home')">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 11.5L12 4l8 7.5M6 10v9.5a1 1 0 001 1h3.5v-6h3v6H17a1 1 0 001-1V10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>选题</span>
+  </button>
+  <button class="mnav-item" data-page="profile" onclick="switchPage('profile')">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <span>档案</span>
+  </button>
+  <button class="mnav-item" data-page="generate" onclick="switchPage('generate')">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M12 3l1.8 4.8L19 9.5l-4.8 1.7L12 16l-1.8-4.8L5 9.5l4.8-1.7L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+    <span>生成</span>
+  </button>
+  <button class="mnav-item" data-page="result" onclick="switchPage('result')">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><rect x="5" y="4" width="14" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <span>成果</span>
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
